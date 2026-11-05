@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Météo Six-Fours-les-Plages</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Météo">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;-webkit-user-select:none;user-select:none}
+body{
+  font-family:"Avenir Next","Helvetica Neue",Helvetica,Arial,sans-serif;
+  color:#f3f8fa;
+  background:#0b2a40;
+  background:linear-gradient(180deg,#06121f 0%,#0b2a40 60%,#0e3a4f 100%);
+  -webkit-transition:background 2s;transition:background 2s;
+}
+body.day{background:linear-gradient(180deg,#14587f 0%,#2a8cab 60%,#5fb7c4 100%)}
+body.wet.day{background:linear-gradient(180deg,#34495a 0%,#56707f 60%,#7c97a3 100%)}
+body.wet.night{background:linear-gradient(180deg,#0a1118 0%,#16222c 60%,#1f3140 100%)}
+
+#app{height:100%;padding:26px 22px 10px;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column}
+h2{margin:0 0 6px;font-size:13px;font-weight:500;color:rgba(243,248,250,.7);letter-spacing:.02em}
+
+/* ---------- haut : heure, météo actuelle, détails ---------- */
+.top{display:-webkit-flex;display:flex;-webkit-flex:0 0 36%;flex:0 0 36%;min-height:0}
+.col-left{-webkit-flex:1 1 0;flex:1 1 0;min-width:0;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:center;justify-content:center}
+.place{font-size:20px;font-weight:600}
+#date{font-size:17px;color:rgba(243,248,250,.75);margin-top:2px}
+#clock{font-size:10.5vw;line-height:1;font-weight:200;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums}
+.col-now{-webkit-flex:1 1 0;flex:1 1 0;min-width:0;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:center;justify-content:center}
+.nowrow{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center}
+#icon{font-size:7vw;line-height:1;margin-right:12px}
+#temp{font-size:11vw;line-height:1;font-weight:200;letter-spacing:-.03em}
+#desc{font-size:20px;font-weight:500;margin-top:6px}
+#feels{font-size:15px;color:rgba(243,248,250,.7);margin-top:2px}
+#minmax{font-size:15px;margin-top:2px}
+#minmax .hi{color:#ffd27a}
+#minmax .lo{color:#a6e0ee}
+.details{-webkit-flex:1.15 1 0;flex:1.15 1 0;min-width:0;display:grid;grid-template-columns:repeat(3,1fr);grid-gap:8px;-webkit-align-content:center;align-content:center}
+.tile{background:rgba(255,255,255,.09);-webkit-backdrop-filter:blur(8px);border-radius:12px;padding:8px 10px;min-height:68px}
+.tile .l{font-size:12px;color:rgba(243,248,250,.68)}
+.tile .v{font-size:21px;font-weight:500;margin-top:2px;white-space:nowrap}
+.tile .s{font-size:12px;color:rgba(243,248,250,.68);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- heure par heure ---------- */
+.hourly{-webkit-flex:0 0 31%;flex:0 0 31%;min-height:0;margin-top:6px}
+.hwrap{display:-webkit-flex;display:flex;background:rgba(255,255,255,.07);border-radius:14px;padding:6px 0 6px 10px}
+.labels{-webkit-flex:0 0 92px;flex:0 0 92px;font-size:12px;color:rgba(243,248,250,.62)}
+.scroll{-webkit-flex:1 1 auto;flex:1 1 auto;display:-webkit-flex;display:flex;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.hc{-webkit-flex:0 0 62px;flex:0 0 62px;text-align:center}
+.hc.first{background:rgba(255,255,255,.1);border-radius:10px}
+.c{height:24px;line-height:24px;font-size:14px;white-space:nowrap}
+.c.hh{height:26px;line-height:26px;font-weight:600}
+.c.ico{height:38px;line-height:38px;font-size:26px}
+.c.tt{height:30px;line-height:30px;font-size:19px;font-weight:600}
+.c.rain{color:#9fd8ff}
+.c.rain.zero{color:rgba(243,248,250,.4)}
+.labels .c{font-size:12px;text-align:left}
+.labels .c.tt{font-size:12px;font-weight:400}
+
+/* ---------- 7 jours ---------- */
+.daily{-webkit-flex:1 1 0;flex:1 1 0;min-height:0;margin-top:8px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);grid-gap:8px}
+.day{background:rgba(255,255,255,.09);border-radius:14px;padding:8px 6px;text-align:center;min-width:0}
+.day.today{background:rgba(255,255,255,.17)}
+.dn{font-size:15px;font-weight:600}
+.di{font-size:30px;line-height:42px}
+.dd{font-size:11px;color:rgba(243,248,250,.7);height:15px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.dt{font-size:19px;font-weight:600;margin-top:2px}
+.dt .lo{font-size:16px;font-weight:400;color:#a6e0ee;margin-left:6px}
+.dt .hi{color:#ffd27a}
+.bar{height:5px;border-radius:3px;background:rgba(255,255,255,.14);margin:5px 6px 6px;position:relative}
+.bar i{position:absolute;top:0;bottom:0;border-radius:3px;background:#ffd27a;background:linear-gradient(90deg,#a6e0ee,#ffd27a)}
+.dl{font-size:12px;color:rgba(243,248,250,.78);line-height:17px;white-space:nowrap}
+.dl.rn{color:#9fd8ff}
+
+#status{-webkit-flex:0 0 auto;flex:0 0 auto;text-align:right;font-size:11px;color:rgba(243,248,250,.5);padding-top:4px;height:18px}
+#status.err{color:#ffb3a0}
+
+/* ---------- iPad en portrait ---------- */
+@media (orientation:portrait){
+  html,body{overflow:auto}
+  #app{height:auto;min-height:100%}
+  .top{-webkit-flex:0 0 auto;flex:0 0 auto;-webkit-flex-wrap:wrap;flex-wrap:wrap}
+  .col-left,.col-now{-webkit-flex:1 1 50%;flex:1 1 50%;padding-bottom:12px}
+  #clock{font-size:15vw}#temp{font-size:15vw}#icon{font-size:10vw}
+  .details{-webkit-flex:1 1 100%;flex:1 1 100%}
+  .hourly,.daily{-webkit-flex:0 0 auto;flex:0 0 auto}
+  .days{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+</head>
+<body class="night">
+<div id="app">
+  <div class="top">
+    <div class="col-left">
+      <div class="place">Six-Fours-les-Plages</div>
+      <div id="date">&nbsp;</div>
+      <div id="clock">--:--</div>
+    </div>
+    <div class="col-now">
+      <div class="nowrow"><div id="icon"></div><div id="temp">--°</div></div>
+      <div id="desc">Chargement…</div>
+      <div id="feels"></div>
+      <div id="minmax"></div>
+    </div>
+    <div class="details" id="details"></div>
+  </div>
+
+  <div class="hourly">
+    <h2>Heure par heure, sur 48 heures</h2>
+    <div class="hwrap">
+      <div class="labels">
+        <div class="c hh">&nbsp;</div>
+        <div class="c ico">&nbsp;</div>
+        <div class="c tt">Température °C</div>
+        <div class="c">Pluie %</div>
+        <div class="c">Humidité %</div>
+        <div class="c">Pression hPa</div>
+        <div class="c">Vent km/h</div>
+      </div>
+      <div class="scroll" id="hours"></div>
+    </div>
+  </div>
+
+  <div class="daily">
+    <h2>Les 7 prochains jours</h2>
+    <div class="days" id="days"></div>
+  </div>
+
+  <div id="status"></div>
+</div>
+
+<script>
+(function () {
+  var LAT = 43.0939, LON = 5.8392;
+  var REFRESH_MS = 15 * 60 * 1000;
+  var RETRY_MS = 60 * 1000;
+
+  var URL = 'https://api.open-meteo.com/v1/forecast' +
+    '?latitude=' + LAT + '&longitude=' + LON +
+    '&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,is_day' +
+    '&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,pressure_msl,wind_speed_10m,is_day' +
+    '&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max' +
+    '&wind_speed_unit=kmh&timezone=Europe%2FParis&past_days=1&forecast_days=7';
+
+  var DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+  var DAYS_SHORT = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+  var MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  var COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'];
+
+  var timer = null;
+
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function r(n) { return Math.round(n); }
+  function fmt1(n) { return (Math.round(n * 10) / 10).toString().replace('.', ','); }
+
+  /* ---------- horloge ---------- */
+  function tick() {
+    var d = new Date();
+    $('clock').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    var jour = DAYS[d.getDay()];
+    $('date').textContent = jour.charAt(0).toUpperCase() + jour.slice(1) + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()];
+  }
+
+  /* ---------- codes météo (WMO) ---------- */
+  function wmo(code, isDay) {
+    switch (code) {
+      case 0: return isDay ? ['☀️', 'Ensoleillé'] : ['🌙', 'Ciel dégagé'];
+      case 1: return isDay ? ['🌤️', 'Plutôt dégagé'] : ['🌙', 'Plutôt dégagé'];
+      case 2: return isDay ? ['⛅', 'Éclaircies'] : ['☁️', 'Nuageux'];
+      case 3: return ['☁️', 'Couvert'];
+      case 45: case 48: return ['🌫️', 'Brouillard'];
+      case 51: case 53: case 55: return ['🌦️', 'Bruine'];
+      case 56: case 57: return ['🌧️', 'Bruine verglaçante'];
+      case 61: return ['🌦️', 'Pluie faible'];
+      case 63: return ['🌧️', 'Pluie'];
+      case 65: return ['🌧️', 'Forte pluie'];
+      case 66: case 67: return ['🌧️', 'Pluie verglaçante'];
+      case 71: case 73: case 75: case 77: return ['🌨️', 'Neige'];
+      case 80: return ['🌦️', 'Averses'];
+      case 81: case 82: return ['🌧️', 'Fortes averses'];
+      case 85: case 86: return ['🌨️', 'Averses de neige'];
+      case 95: return ['⛈️', 'Orage'];
+      case 96: case 99: return ['⛈️', 'Orage et grêle'];
+      default: return ['❔', 'Indéterminé'];
+    }
+  }
+
+  function uvLabel(u) {
+    if (u < 3) { return 'Faible'; }
+    if (u < 6) { return 'Modéré'; }
+    if (u < 8) { return 'Élevé'; }
+    if (u < 11) { return 'Très élevé'; }
+    return 'Extrême';
+  }
+
+  function hm(iso) { return iso.substr(11, 2) + 'h' + iso.substr(14, 2); }
+
+  function dayOf(isoDate) {
+    var p = isoDate.substr(0, 10).split('-');
+    return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getDay();
+  }
+
+  /* ---------- affichage ---------- */
+  function render(d) {
+    var c = d.current, h = d.hourly, dl = d.daily, i;
+
+    // index de l'heure courante dans les données horaires
+    var idx = -1;
+    var nowKey = c.time.substr(0, 13);
+    for (i = 0; i < h.time.length; i++) {
+      if (h.time[i].substr(0, 13) === nowKey) { idx = i; break; }
+    }
+    if (idx < 0) { idx = 24; }
+
+    // index du jour courant dans les données journalières
+    var di = 0, todayKey = c.time.substr(0, 10);
+    for (i = 0; i < dl.time.length; i++) {
+      if (dl.time[i] === todayKey) { di = i; break; }
+    }
+
+    var isDay = c.is_day === 1;
+    var w = wmo(c.weather_code, isDay);
+    var wet = (c.weather_code >= 51);
+    document.body.className = (isDay ? 'day' : 'night') + (wet ? ' wet' : '');
+
+    // météo actuelle
+    $('icon').textContent = w[0];
+    $('temp').textContent = r(c.temperature_2m) + '°';
+    $('desc').textContent = w[1];
+    $('feels').textContent = 'Ressenti ' + r(c.apparent_temperature) + '°';
+    $('minmax').innerHTML = '<span class="hi">▲ ' + r(dl.temperature_2m_max[di]) + '°</span>&nbsp;&nbsp;<span class="lo">▼ ' + r(dl.temperature_2m_min[di]) + '°</span>';
+
+    // tendance de pression sur 3 h
+    var trend = 'stable', arrow = '→';
+    if (idx >= 3) {
+      var diff = c.pressure_msl - h.pressure_msl[idx - 3];
+      if (diff > 1) { trend = 'en hausse'; arrow = '↗'; }
+      else if (diff < -1) { trend = 'en baisse'; arrow = '↘'; }
+    }
+
+    // cumul de pluie sur 24 h
+    var rain24 = 0;
+    for (i = idx; i < idx + 24 && i < h.precipitation.length; i++) { rain24 += h.precipitation[i] || 0; }
+
+    var uv = dl.uv_index_max[di];
+    var dirIdx = Math.round(c.wind_direction_10m / 22.5) % 16;
+
+    var tiles = [
+      ['Humidité', c.relative_humidity_2m + ' %', ''],
+      ['Pression', r(c.pressure_msl) + ' hPa', arrow + ' ' + trend],
+      ['Vent', r(c.wind_speed_10m) + ' km/h', 'Direction ' + COMPASS[dirIdx]],
+      ['Rafales', r(c.wind_gusts_10m) + ' km/h', ''],
+      ['Pluie sur 24 h', fmt1(rain24) + ' mm', 'En ce moment ' + fmt1(c.precipitation) + ' mm'],
+      ['Nuages', c.cloud_cover + ' %', ''],
+      ['Indice UV max', r(uv), uvLabel(uv)],
+      ['Lever du soleil', hm(dl.sunrise[di]), ''],
+      ['Coucher du soleil', hm(dl.sunset[di]), '']
+    ];
+    var th = '';
+    for (i = 0; i < tiles.length; i++) {
+      th += '<div class="tile"><div class="l">' + tiles[i][0] + '</div><div class="v">' + tiles[i][1] + '</div><div class="s">' + (tiles[i][2] || '&nbsp;') + '</div></div>';
+    }
+    $('details').innerHTML = th;
+
+    // heure par heure (48 h)
+    var hs = '';
+    for (i = idx; i < idx + 48 && i < h.time.length; i++) {
+      var hw = wmo(h.weather_code[i], h.is_day[i] === 1);
+      var hour = parseInt(h.time[i].substr(11, 2), 10);
+      var label;
+      if (i === idx) { label = 'Maint.'; }
+      else if (hour === 0) { label = DAYS_SHORT[dayOf(h.time[i])]; }
+      else { label = hour + 'h'; }
+      var pp = h.precipitation_probability[i];
+      hs += '<div class="hc' + (i === idx ? ' first' : '') + '">' +
+        '<div class="c hh">' + label + '</div>' +
+        '<div class="c ico">' + hw[0] + '</div>' +
+        '<div class="c tt">' + r(h.temperature_2m[i]) + '°</div>' +
+        '<div class="c rain' + (pp === 0 ? ' zero' : '') + '">' + pp + '</div>' +
+        '<div class="c">' + h.relative_humidity_2m[i] + '</div>' +
+        '<div class="c">' + r(h.pressure_msl[i]) + '</div>' +
+        '<div class="c">' + r(h.wind_speed_10m[i]) + '</div>' +
+        '</div>';
+    }
+    var sc = $('hours');
+    sc.innerHTML = hs;
+    sc.scrollLeft = 0;
+
+    // 7 jours
+    var gmin = 100, gmax = -100, j, last = Math.min(di + 7, dl.time.length);
+    for (j = di; j < last; j++) {
+      if (dl.temperature_2m_min[j] < gmin) { gmin = dl.temperature_2m_min[j]; }
+      if (dl.temperature_2m_max[j] > gmax) { gmax = dl.temperature_2m_max[j]; }
+    }
+    var span = (gmax - gmin) || 1;
+    var ds = '';
+    for (j = di; j < last; j++) {
+      var dw = wmo(dl.weather_code[j], true);
+      var name = (j === di) ? 'Auj.' : DAYS_SHORT[dayOf(dl.time[j])];
+      var left = (dl.temperature_2m_min[j] - gmin) / span * 100;
+      var width = Math.max(8, (dl.temperature_2m_max[j] - dl.temperature_2m_min[j]) / span * 100);
+      if (left + width > 100) { left = 100 - width; }
+      ds += '<div class="day' + (j === di ? ' today' : '') + '">' +
+        '<div class="dn">' + name + '</div>' +
+        '<div class="di">' + dw[0] + '</div>' +
+        '<div class="dd">' + dw[1] + '</div>' +
+        '<div class="dt"><span class="hi">' + r(dl.temperature_2m_max[j]) + '°</span><span class="lo">' + r(dl.temperature_2m_min[j]) + '°</span></div>' +
+        '<div class="bar"><i style="left:' + left + '%;width:' + width + '%"></i></div>' +
+        '<div class="dl rn">Pluie ' + dl.precipitation_probability_max[j] + ' % · ' + fmt1(dl.precipitation_sum[j]) + ' mm</div>' +
+        '<div class="dl">Vent ' + r(dl.wind_speed_10m_max[j]) + ' km/h</div>' +
+        '<div class="dl">UV ' + r(dl.uv_index_max[j]) + '</div>' +
+        '</div>';
+    }
+    $('days').innerHTML = ds;
+  }
+
+  /* ---------- chargement ---------- */
+  function setStatus(msg, isErr) {
+    var s = $('status');
+    s.textContent = msg;
+    s.className = isErr ? 'err' : '';
+  }
+
+  function schedule(ms) {
+    if (timer) { clearTimeout(timer); }
+    timer = setTimeout(load, ms);
+  }
+
+  function fail() {
+    setStatus('Données en direct indisponibles ici : une page publiée ne peut pas appeler Open-Meteo. Héberge le fichier sur GitHub Pages pour la météo réelle.', true);
+    schedule(RETRY_MS);
+  }
+
+  function load() {
+    var x = new XMLHttpRequest();
+    x.open('GET', URL, true);
+    x.timeout = 20000;
+    x.onload = function () {
+      if (x.status === 200) {
+        try {
+          render(JSON.parse(x.responseText));
+          var n = new Date();
+          setStatus('Mis à jour à ' + pad(n.getHours()) + 'h' + pad(n.getMinutes()) + ' · données Open-Meteo', false);
+          schedule(REFRESH_MS);
+        } catch (e) {
+          setStatus('Erreur d’affichage : ' + e.message, true);
+          schedule(RETRY_MS);
+        }
+      } else {
+        fail();
+      }
+    };
+    x.onerror = fail;
+    x.ontimeout = fail;
+    x.send();
+  }
+
+  tick();
+  setInterval(tick, 1000);
+  load();
+
+  // à la sortie de veille, on rafraîchit tout de suite
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { tick(); load(); }
+  });
+})();
+</script>
+</body>
+</html>
