@@ -16,6 +16,10 @@ body.day{background:linear-gradient(180deg,#14587f 0%,#2a8cab 60%,#5fb7c4 100%)}
 body.wet.day{background:linear-gradient(180deg,#34495a 0%,#56707f 60%,#7c97a3 100%)}
 body.wet.night{background:linear-gradient(180deg,#0a1118 0%,#16222c 60%,#1f3140 100%)}
 #app{height:100vh;display:grid;grid-template-columns:36rem minmax(0,1fr);grid-template-rows:minmax(0,1fr) 10.2rem 12rem 14rem 1.3rem;grid-gap:.7rem;padding:1.1rem 1.3rem .3rem;padding-top:calc(1.1rem + env(safe-area-inset-top, 0px));padding-bottom:calc(.3rem + env(safe-area-inset-bottom, 0px))}
+/* écrans tactiles (iPad) : on laisse de la place sous la barre d'état, que le système floute */
+@media (hover:none) and (pointer:coarse){
+  #app{padding-top:calc(6rem + env(safe-area-inset-top, 0px))}
+}
 .strip,.charts,.days,#status{grid-column:1/-1}
 .card{background:rgba(255,255,255,.08);border-radius:.9rem}
 
