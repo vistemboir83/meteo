@@ -15,7 +15,7 @@ body{margin:0;height:100vh;overflow:hidden;cursor:default;font-family:"Avenir Ne
 body.day{background:linear-gradient(180deg,#14587f 0%,#2a8cab 60%,#5fb7c4 100%)}
 body.wet.day{background:linear-gradient(180deg,#34495a 0%,#56707f 60%,#7c97a3 100%)}
 body.wet.night{background:linear-gradient(180deg,#0a1118 0%,#16222c 60%,#1f3140 100%)}
-#app{height:100vh;display:grid;grid-template-columns:36rem minmax(0,1fr);grid-template-rows:minmax(0,1fr) 8rem 13.5rem 14.5rem 1.3rem;grid-gap:.7rem;padding:1.1rem 1.3rem .3rem}
+#app{height:100vh;display:grid;grid-template-columns:36rem minmax(0,1fr);grid-template-rows:minmax(0,1fr) 10.2rem 12rem 14rem 1.3rem;grid-gap:.7rem;padding:1.1rem 1.3rem .3rem}
 .strip,.charts,.days,#status{grid-column:1/-1}
 .card{background:rgba(255,255,255,.08);border-radius:.9rem}
 
@@ -46,10 +46,16 @@ a.tab{text-decoration:none;display:inline-block}
 #map{flex:1;min-height:0;width:100%;border:0;border-radius:.9rem;background:rgba(255,255,255,.06)}
 
 /* heure par heure */
-.strip{display:grid;grid-template-columns:repeat(24,1fr);padding:.4rem .5rem;text-align:center}
-.hc{border-radius:.6rem}.hc.first{background:rgba(255,255,255,.12)}
-.hc div{line-height:1.7rem;font-size:1.05rem;white-space:nowrap}
-.hc .h{font-weight:600}.hc .i{font-size:1.7rem;line-height:2.2rem}.hc .t{font-size:1.35rem;font-weight:600}.hc .p{color:#9fd8ff;font-size:.95rem}.hc .p.z{color:rgba(243,248,250,.4)}
+.strip{display:flex;padding:.3rem .5rem;text-align:center;overflow:hidden}
+.lab{flex:0 0 8.2rem;text-align:left;color:rgba(243,248,250,.62)}
+.hcs{flex:1;min-width:0;display:grid;grid-template-columns:repeat(48,1fr)}
+.hc{border-radius:.4rem;min-width:0}.hc.first{background:rgba(255,255,255,.14)}
+.hc div,.lab div{height:1.2rem;line-height:1.2rem;font-size:.95rem;white-space:nowrap;overflow:hidden}
+.lab div{font-size:.8rem}
+.hc .h,.lab .h{height:1.4rem;line-height:1.4rem}.hc .h{font-weight:600;font-size:.85rem}
+.hc .i,.lab .i{height:2rem;line-height:2rem}.hc .i{font-size:1.5rem}
+.hc .t,.lab .t{height:1.6rem;line-height:1.6rem}.hc .t{font-size:1.15rem;font-weight:600}
+.hc .p{color:#9fd8ff}.hc .p.z{color:rgba(243,248,250,.4)}
 
 /* graphiques */
 .charts{display:grid;grid-template-columns:repeat(4,1fr);grid-gap:.7rem}
@@ -149,7 +155,7 @@ a.tab{text-decoration:none;display:inline-block}
   /* ---------- carte Windy ---------- */
   function mapUrl() {
     return 'https://embed.windy.com/embed2.html?lat=' + LAT + '&lon=' + LON + '&detailLat=' + LAT + '&detailLon=' + LON +
-      '&zoom=8&level=surface&overlay=' + overlay + '&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1';
+      '&zoom=8&level=surface&overlay=' + overlay + '&product=' + (overlay === 'waves' ? 'ecmwfWaves' : 'ecmwf') + '&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1';
   }
   function buildTabs() {
     var h = '';
@@ -196,6 +202,15 @@ a.tab{text-decoration:none;display:inline-block}
       '<div class="cb"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + s + '</svg>' + lab + '</div></div>';
   }
 
+  function moon() {
+    var ph = (((Date.now() - Date.UTC(2000, 0, 6, 18, 14)) / 86400000) / 29.530588) % 1;
+    if (ph < 0) { ph += 1; }
+    var em = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'][Math.round(ph * 8) % 8];
+    var nm = (ph < 0.03 || ph > 0.97) ? 'Nouvelle lune' : ph < 0.22 ? 'Premier croissant' : ph < 0.28 ? 'Premier quartier' : ph < 0.47 ? 'Gibbeuse croissante' :
+      ph < 0.53 ? 'Pleine lune' : ph < 0.72 ? 'Gibbeuse décroissante' : ph < 0.78 ? 'Dernier quartier' : 'Dernier croissant';
+    return [em, nm, r((1 - Math.cos(2 * Math.PI * ph)) / 2 * 100)];
+  }
+
   /* ---------- affichage ---------- */
   function render(d) {
     var c = d.current, h = d.hourly, dl = d.daily, i, j;
@@ -236,6 +251,7 @@ a.tab{text-decoration:none;display:inline-block}
       ['Coucher', hm(dl.sunset[di]), ''],
       ['Mer', sea === null ? '—' : f1(sea) + '°', 'Température de l’eau'],
       ['Vagues', wave === null ? '—' : f1(wave) + ' m', marine && marine.wave_period != null ? 'Période ' + r(marine.wave_period) + ' s' : ''],
+      ['Lune', moon()[0] + ' ' + moon()[2] + ' %', moon()[1]],
       ['Mis à jour', pad(new Date().getHours()) + 'h' + pad(new Date().getMinutes()), 'Open-Meteo']
     ];
     var th = '';
@@ -244,14 +260,15 @@ a.tab{text-decoration:none;display:inline-block}
     }
     $('tiles').innerHTML = th;
 
-    // 24 heures
+    // 48 heures
     var hs = '';
-    for (i = idx; i < idx + 24 && i < h.time.length; i++) {
+    for (i = idx; i < idx + 48 && i < h.time.length; i++) {
       var hw = wmo(h.weather_code[i], h.is_day[i] === 1), hr = +h.time[i].substr(11, 2), pp = h.precipitation_probability[i];
       hs += '<div class="hc' + (i === idx ? ' first' : '') + '"><div class="h">' + (i === idx ? 'Maint.' : hr === 0 ? DS[dow(h.time[i])] : hr + 'h') + '</div><div class="i">' + hw[0] +
-        '</div><div class="t">' + r(h.temperature_2m[i]) + '°</div><div class="p' + (pp === 0 ? ' z' : '') + '">' + pp + ' %</div></div>';
+        '</div><div class="t">' + r(h.temperature_2m[i]) + '°</div><div class="p' + (pp === 0 ? ' z' : '') + '">' + pp + '</div><div>' + h.relative_humidity_2m[i] +
+        '</div><div>' + r(h.pressure_msl[i]) + '</div><div>' + r(h.wind_speed_10m[i]) + '</div></div>';
     }
-    $('strip').innerHTML = hs;
+    $('strip').innerHTML = '<div class="lab"><div class="h">&nbsp;</div><div class="i">&nbsp;</div><div class="t">Température °C</div><div>Pluie %</div><div>Humidité %</div><div>Pression hPa</div><div>Vent km/h</div></div><div class="hcs">' + hs + '</div>';
 
     // graphiques sur 48 h
     function sl(a) { return a.slice(idx, idx + 48); }
