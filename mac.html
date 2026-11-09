@@ -39,6 +39,15 @@ body.wet.night{background:linear-gradient(180deg,#0a1118 0%,#16222c 60%,#1f3140 
 .tile{background:rgba(255,255,255,.09);border-radius:.7rem;padding:.4rem .6rem;min-width:0;overflow:hidden}
 .tile .l{font-size:.85rem;color:rgba(243,248,250,.68);white-space:nowrap}
 .tile .v{font-size:1.45rem;font-weight:500;white-space:nowrap}
+.tiles{grid-auto-flow:dense}
+.tile.wide{grid-column:span 2}
+.tile.wide .v{font-size:1.3rem}
+.tile.wide .s{font-size:.75rem}
+.tile small{font-size:.8rem;font-weight:400;color:rgba(243,248,250,.7)}
+.gw{position:relative;margin:.3rem 0 .35rem}
+.g{display:flex;height:.5rem;border-radius:.3rem;overflow:hidden}.g i{flex:1}
+.gw b{position:absolute;top:-.2rem;width:.2rem;height:.9rem;margin-left:-.1rem;background:#fff;border-radius:.1rem;box-shadow:0 0 .2rem rgba(0,0,0,.6)}
+.pms{display:flex}.pms .pm{flex:1;min-width:0}.pms .pm+.pm{margin-left:.8rem}
 .tile .s{font-size:.8rem;color:rgba(243,248,250,.68);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* carte */
@@ -112,7 +121,7 @@ a.tab{text-decoration:none;display:inline-block}
   var MARINE = 'https://marine-api.open-meteo.com/v1/marine?latitude=' + LAT + '&longitude=' + LON +
     '&current=wave_height,wave_period,sea_surface_temperature&timezone=Europe%2FParis';
   var AIR = 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + LAT + '&longitude=' + LON +
-    '&current=european_aqi,pm2_5,pm10,ozone&timezone=Europe%2FParis';
+    '&current=european_aqi,european_aqi_pm2_5,european_aqi_pm10,pm2_5,pm10&timezone=Europe%2FParis';
   var OVERLAYS = [['wind', 'Vent'], ['rain', 'Pluie'], ['temp', 'Température'], ['clouds', 'Nuages'], ['pressure', 'Pression'], ['waves', 'Vagues']];
   var DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
   var DS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
@@ -208,19 +217,33 @@ a.tab{text-decoration:none;display:inline-block}
       '<div class="cb"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + s + '</svg>' + lab + '</div></div>';
   }
 
-  function airTile() {
-    if (!air || air.european_aqi == null) { return ['Qualité de l’air', '—', 'Indisponible']; }
-    var a = air.european_aqi, k = a < 20 ? 0 : a < 40 ? 1 : a < 60 ? 2 : a < 80 ? 3 : a < 100 ? 4 : 5;
-    var names = ['Bon', 'Correct', 'Modéré', 'Mauvais', 'Très mauvais', 'Extrême'];
-    var cols = ['#7be0a4', '#c8e66f', '#ffd27a', '#ffa36b', '#ff7a7a', '#d59bff'];
-    return ['Qualité de l’air', '<span style="color:' + cols[k] + '">' + names[k] + '</span>',
-      'Indice ' + r(a) + ' · PM2,5 ' + f1(air.pm2_5 == null ? 0 : air.pm2_5)];
+  var AQ_NAMES = ['Bon', 'Correct', 'Modéré', 'Mauvais', 'Très mauvais', 'Extrême'];
+  var AQ_COLS = ['#7be0a4', '#c8e66f', '#ffd27a', '#ffa36b', '#ff7a7a', '#d59bff'];
+  function aqLevel(a) { return a < 20 ? 0 : a < 40 ? 1 : a < 60 ? 2 : a < 80 ? 3 : a < 100 ? 4 : 5; }
+  function gauge(a) {
+    var h = '<div class="gw"><div class="g">', k;
+    for (k = 0; k < 6; k++) { h += '<i style="background:' + AQ_COLS[k] + '"></i>'; }
+    return h + '</div><b style="left:' + (Math.min(Math.max(a, 0), 120) / 120 * 100) + '%"></b></div>';
   }
-
+  function airTile() {
+    if (!air || air.european_aqi == null) {
+      return '<div class="tile wide"><div class="l">Qualité de l’air</div><div class="v">—</div><div class="s">Indisponible</div></div>';
+    }
+    var a = air.european_aqi, k = aqLevel(a);
+    return '<div class="tile wide"><div class="l">Qualité de l’air · indice européen</div><div class="v"><span style="color:' + AQ_COLS[k] + '">' + AQ_NAMES[k] +
+      '</span> <small>' + r(a) + ' / 100</small></div>' + gauge(a) + '<div class="s">0 = air très pur · 100 et plus = pollution extrême</div></div>';
+  }
+  function pmPart(label, conc, idx) {
+    var k = aqLevel(idx);
+    return '<div class="pm"><div class="l">' + label + '</div><div class="v"><span style="color:' + AQ_COLS[k] + '">' + f1(conc) + '</span> <small>µg/m³ · ' + AQ_NAMES[k] + '</small></div>' + gauge(idx) + '</div>';
+  }
   function airTile2() {
-    if (!air || air.pm2_5 == null) { return ['Particules PM2,5 / PM10', '—', 'Indisponible']; }
-    return ['Particules PM2,5 / PM10', f1(air.pm2_5) + ' / ' + f1(air.pm10 == null ? 0 : air.pm10),
-      'µg/m³' + (air.ozone == null ? '' : ' · Ozone ' + r(air.ozone))];
+    if (!air || air.pm2_5 == null) {
+      return '<div class="tile wide"><div class="l">Particules PM2,5 / PM10</div><div class="v">—</div><div class="s">Indisponible</div></div>';
+    }
+    return '<div class="tile wide pms">' +
+      pmPart('PM2,5 · particules fines', air.pm2_5, air.european_aqi_pm2_5 == null ? 0 : air.european_aqi_pm2_5) +
+      pmPart('PM10 · particules', air.pm10 == null ? 0 : air.pm10, air.european_aqi_pm10 == null ? 0 : air.european_aqi_pm10) + '</div>';
   }
 
   /* ---------- affichage ---------- */
@@ -250,7 +273,9 @@ a.tab{text-decoration:none;display:inline-block}
     var sea = marine && marine.sea_surface_temperature != null ? r(marine.sea_surface_temperature * 10) / 10 : null;
     var wave = marine && marine.wave_height != null ? marine.wave_height : null;
     var tiles = [
+      airTile(),
       ['Humidité', c.relative_humidity_2m + ' %', 'Rosée ' + r(h.dew_point_2m[idx]) + '°'],
+      airTile2(),
       ['Pression', r(c.pressure_msl) + ' hPa', arrow + ' ' + trend],
       ['Vent', r(c.wind_speed_10m) + ' km/h', COMPASS[Math.round(c.wind_direction_10m / 22.5) % 16] + ' (' + r(c.wind_direction_10m) + '°)'],
       ['Rafales', r(c.wind_gusts_10m) + ' km/h', 'Max jour ' + r(dl.wind_gusts_10m_max[di])],
@@ -258,17 +283,14 @@ a.tab{text-decoration:none;display:inline-block}
       ['Nuages', c.cloud_cover + ' %', ''],
       ['Visibilité', f1(h.visibility[idx] / 1000) + ' km', ''],
       ['Indice UV max', r(uv), uvLabel(uv)],
-      ['Durée du jour', Math.floor(dur / 3600) + 'h' + pad(Math.round(dur % 3600 / 60)), ''],
-      ['Lever', hm(dl.sunrise[di]), ''],
-      ['Coucher', hm(dl.sunset[di]), ''],
+      ['Lever → coucher', '<span style="font-size:1.15rem">' + hm(dl.sunrise[di]) + ' → ' + hm(dl.sunset[di]) + '</span>', 'Jour : ' + Math.floor(dur / 3600) + 'h' + pad(Math.round(dur % 3600 / 60))],
       ['Mer', sea === null ? '—' : f1(sea) + '°', 'Température de l’eau'],
-      ['Vagues', wave === null ? '—' : f1(wave) + ' m', marine && marine.wave_period != null ? 'Période ' + r(marine.wave_period) + ' s' : ''],
-      airTile(),
-      airTile2()
+      ['Vagues', wave === null ? '—' : f1(wave) + ' m', marine && marine.wave_period != null ? 'Période ' + r(marine.wave_period) + ' s' : '']
     ];
     var th = '';
     for (i = 0; i < tiles.length; i++) {
-      th += '<div class="tile"><div class="l">' + tiles[i][0] + '</div><div class="v">' + tiles[i][1] + '</div><div class="s">' + (tiles[i][2] || '&nbsp;') + '</div></div>';
+      th += (typeof tiles[i] === 'string') ? tiles[i] :
+        '<div class="tile"><div class="l">' + tiles[i][0] + '</div><div class="v">' + tiles[i][1] + '</div><div class="s">' + (tiles[i][2] || '&nbsp;') + '</div></div>';
     }
     $('tiles').innerHTML = th;
 
