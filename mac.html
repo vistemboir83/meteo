@@ -111,12 +111,14 @@ a.tab{text-decoration:none;display:inline-block}
     '&wind_speed_unit=kmh&timezone=Europe%2FParis&past_days=1&forecast_days=10';
   var MARINE = 'https://marine-api.open-meteo.com/v1/marine?latitude=' + LAT + '&longitude=' + LON +
     '&current=wave_height,wave_period,sea_surface_temperature&timezone=Europe%2FParis';
+  var AIR = 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + LAT + '&longitude=' + LON +
+    '&current=european_aqi,pm2_5,pm10,ozone&timezone=Europe%2FParis';
   var OVERLAYS = [['wind', 'Vent'], ['rain', 'Pluie'], ['temp', 'Température'], ['clouds', 'Nuages'], ['pressure', 'Pression'], ['waves', 'Vagues']];
   var DAYS = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
   var DS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
   var MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
   var COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'];
-  var overlay = 'wind', timer = null, lastData = null, marine = null;
+  var overlay = 'wind', timer = null, lastData = null, marine = null, air = null;
 
   function $(id) { return document.getElementById(id); }
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
@@ -206,13 +208,19 @@ a.tab{text-decoration:none;display:inline-block}
       '<div class="cb"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + s + '</svg>' + lab + '</div></div>';
   }
 
-  function moon() {
-    var ph = (((Date.now() - Date.UTC(2000, 0, 6, 18, 14)) / 86400000) / 29.530588) % 1;
-    if (ph < 0) { ph += 1; }
-    var em = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'][Math.round(ph * 8) % 8];
-    var nm = (ph < 0.03 || ph > 0.97) ? 'Nouvelle lune' : ph < 0.22 ? 'Premier croissant' : ph < 0.28 ? 'Premier quartier' : ph < 0.47 ? 'Gibbeuse croissante' :
-      ph < 0.53 ? 'Pleine lune' : ph < 0.72 ? 'Gibbeuse décroissante' : ph < 0.78 ? 'Dernier quartier' : 'Dernier croissant';
-    return [em, nm, r((1 - Math.cos(2 * Math.PI * ph)) / 2 * 100)];
+  function airTile() {
+    if (!air || air.european_aqi == null) { return ['Qualité de l’air', '—', 'Indisponible']; }
+    var a = air.european_aqi, k = a < 20 ? 0 : a < 40 ? 1 : a < 60 ? 2 : a < 80 ? 3 : a < 100 ? 4 : 5;
+    var names = ['Bon', 'Correct', 'Modéré', 'Mauvais', 'Très mauvais', 'Extrême'];
+    var cols = ['#7be0a4', '#c8e66f', '#ffd27a', '#ffa36b', '#ff7a7a', '#d59bff'];
+    return ['Qualité de l’air', '<span style="color:' + cols[k] + '">' + names[k] + '</span>',
+      'Indice ' + r(a) + ' · PM2,5 ' + f1(air.pm2_5 == null ? 0 : air.pm2_5)];
+  }
+
+  function airTile2() {
+    if (!air || air.pm2_5 == null) { return ['Particules PM2,5 / PM10', '—', 'Indisponible']; }
+    return ['Particules PM2,5 / PM10', f1(air.pm2_5) + ' / ' + f1(air.pm10 == null ? 0 : air.pm10),
+      'µg/m³' + (air.ozone == null ? '' : ' · Ozone ' + r(air.ozone))];
   }
 
   /* ---------- affichage ---------- */
@@ -255,8 +263,8 @@ a.tab{text-decoration:none;display:inline-block}
       ['Coucher', hm(dl.sunset[di]), ''],
       ['Mer', sea === null ? '—' : f1(sea) + '°', 'Température de l’eau'],
       ['Vagues', wave === null ? '—' : f1(wave) + ' m', marine && marine.wave_period != null ? 'Période ' + r(marine.wave_period) + ' s' : ''],
-      ['Lune', moon()[0] + ' ' + moon()[2] + ' %', moon()[1]],
-      ['Mis à jour', pad(new Date().getHours()) + 'h' + pad(new Date().getMinutes()), 'Open-Meteo']
+      airTile(),
+      airTile2()
     ];
     var th = '';
     for (i = 0; i < tiles.length; i++) {
@@ -310,6 +318,9 @@ a.tab{text-decoration:none;display:inline-block}
     fetch(MARINE).then(function (x) { return x.json(); }).then(function (m) {
       marine = m.current || null; if (lastData) { render(lastData); }
     }).catch(function () { marine = null; });
+    fetch(AIR).then(function (x) { return x.json(); }).then(function (a) {
+      air = a.current || null; if (lastData) { render(lastData); }
+    }).catch(function () { air = null; });
     fetch(FC).then(function (x) { if (!x.ok) { throw new Error('HTTP ' + x.status); } return x.json(); }).then(function (d) {
       lastData = d; render(d);
       var n = new Date();
