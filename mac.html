@@ -230,8 +230,8 @@ a.tab{text-decoration:none;display:inline-block}
       return '<div class="tile wide"><div class="l">Qualité de l’air</div><div class="v">—</div><div class="s">Indisponible</div></div>';
     }
     var a = air.european_aqi, k = aqLevel(a);
-    return '<div class="tile wide"><div class="l">Qualité de l’air · indice européen</div><div class="v"><span style="color:' + AQ_COLS[k] + '">' + AQ_NAMES[k] +
-      '</span> <small>' + r(a) + ' / 100</small></div>' + gauge(a) + '<div class="s">0 = air très pur · 100 et plus = pollution extrême</div></div>';
+    return '<div class="tile wide"><div class="l">Qualité de l’air · 0 = très pur, 100+ = extrême</div><div class="v"><span style="color:' + AQ_COLS[k] + '">' + AQ_NAMES[k] +
+      '</span> <small>' + r(a) + ' / 100</small></div>' + gauge(a) + '</div>';
   }
   function pmPart(label, conc, idx) {
     var k = aqLevel(idx);
@@ -273,9 +273,7 @@ a.tab{text-decoration:none;display:inline-block}
     var sea = marine && marine.sea_surface_temperature != null ? r(marine.sea_surface_temperature * 10) / 10 : null;
     var wave = marine && marine.wave_height != null ? marine.wave_height : null;
     var tiles = [
-      airTile(),
       ['Humidité', c.relative_humidity_2m + ' %', 'Rosée ' + r(h.dew_point_2m[idx]) + '°'],
-      airTile2(),
       ['Pression', r(c.pressure_msl) + ' hPa', arrow + ' ' + trend],
       ['Vent', r(c.wind_speed_10m) + ' km/h', COMPASS[Math.round(c.wind_direction_10m / 22.5) % 16] + ' (' + r(c.wind_direction_10m) + '°)'],
       ['Rafales', r(c.wind_gusts_10m) + ' km/h', 'Max jour ' + r(dl.wind_gusts_10m_max[di])],
@@ -284,7 +282,9 @@ a.tab{text-decoration:none;display:inline-block}
       ['Visibilité', f1(h.visibility[idx] / 1000) + ' km', ''],
       ['Indice UV max', r(uv), uvLabel(uv)],
       ['Lever → coucher', '<span style="font-size:1.15rem">' + hm(dl.sunrise[di]) + ' → ' + hm(dl.sunset[di]) + '</span>', 'Jour : ' + Math.floor(dur / 3600) + 'h' + pad(Math.round(dur % 3600 / 60))],
+      airTile(),
       ['Mer', sea === null ? '—' : f1(sea) + '°', 'Température de l’eau'],
+      airTile2(),
       ['Vagues', wave === null ? '—' : f1(wave) + ' m', marine && marine.wave_period != null ? 'Période ' + r(marine.wave_period) + ' s' : '']
     ];
     var th = '';
