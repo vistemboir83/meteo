@@ -205,17 +205,6 @@ a.tab{text-decoration:none;display:inline-block}
     function Y(v) { return H - ((v - mn) / (mx - mn)) * H * 0.62 - H * 0.2; }
     function fy(v) { return (mx - mn) < 10 ? f1(v) : String(r(v)); }
     function fm(v) { return r(v) + o.unit; }
-    if (o.night) {
-      var st = -1, half = W / (N - 1) / 2;
-      for (i = 0; i <= N; i++) {
-        var nt = i < N && o.night[i] === 0;
-        if (nt && st < 0) { st = i; }
-        if (!nt && st >= 0) {
-          var x1 = Math.max(0, X(st) - half), x2 = Math.min(W, X(i - 1) + half);
-          s += '<rect x="' + x1 + '" y="0" width="' + (x2 - x1) + '" height="' + H + '" fill="rgba(0,0,0,.22)"/>'; st = -1;
-        }
-      }
-    }
     var grid = [mx, (mx + mn) / 2, mn];
     for (k = 0; k < 3; k++) {
       s += '<line x1="0" x2="' + W + '" y1="' + Y(grid[k]) + '" y2="' + Y(grid[k]) + '" stroke="rgba(255,255,255,.13)" vector-effect="non-scaling-stroke"/>';
@@ -353,14 +342,14 @@ a.tab{text-decoration:none;display:inline-block}
     var pd = p48[p48.length - 1] - p48[0];
     $('charts').innerHTML =
       chart('Température et pluie', T, [{ v: sl(h.temperature_2m), c: '#ffd27a' }, { v: sl(h.apparent_temperature), c: '#a6e0ee', dash: 1 }],
-        { night: sl(h.is_day), unit: '°', now: r(c.temperature_2m) + '°', bars: { v: sl(h.precipitation), c: '#8fd0ff' },
+        { unit: '°', now: r(c.temperature_2m) + '°', bars: { v: sl(h.precipitation), c: '#8fd0ff' },
           legend: [['Température °C', '#ffd27a', 's'], ['Ressenti', '#a6e0ee', 'd'], [rain48 > 0 ? 'Pluie : ' + f1(rain48) + ' mm sur 48 h' : 'Pas de pluie prévue', '#8fd0ff', 'b']] }) +
       chart('Vent et rafales', T, [{ v: sl(h.wind_speed_10m), c: '#ffffff' }, { v: sl(h.wind_gusts_10m), c: '#ffb27a', dash: 1 }],
-        { night: sl(h.is_day), unit: ' km/h', now: r(c.wind_speed_10m) + ' km/h', legend: [['Vent moyen', '#ffffff', 's'], ['Rafales', '#ffb27a', 'd']] }) +
+        { unit: ' km/h', now: r(c.wind_speed_10m) + ' km/h', legend: [['Vent moyen', '#ffffff', 's'], ['Rafales', '#ffb27a', 'd']] }) +
       chart('Pression', T, [{ v: p48, c: '#c9b6ff' }],
-        { night: sl(h.is_day), unit: ' hPa', now: r(c.pressure_msl) + ' hPa', legend: [['Pression (hPa)', '#c9b6ff', 's'], ['Tendance 48 h : ' + (pd > 1 ? '↗' : pd < -1 ? '↘' : '→') + ' ' + (pd > 0 ? '+' : '') + f1(pd) + ' hPa', '', 'n']] }) +
+        { unit: ' hPa', now: r(c.pressure_msl) + ' hPa', legend: [['Pression (hPa)', '#c9b6ff', 's'], ['Tendance 48 h : ' + (pd > 1 ? '↗' : pd < -1 ? '↘' : '→') + ' ' + (pd > 0 ? '+' : '') + f1(pd) + ' hPa', '', 'n']] }) +
       chart('Humidité et nuages', T, [{ v: sl(h.relative_humidity_2m), c: '#8fe3c0' }, { v: sl(h.cloud_cover), c: '#cfd8dc', dash: 1 }],
-        { night: sl(h.is_day), unit: ' %', now: r(c.relative_humidity_2m) + ' %', fixed: [0, 100], legend: [['Humidité', '#8fe3c0', 's'], ['Couverture nuageuse', '#cfd8dc', 'd']] });
+        { unit: ' %', now: r(c.relative_humidity_2m) + ' %', fixed: [0, 100], legend: [['Humidité', '#8fe3c0', 's'], ['Couverture nuageuse', '#cfd8dc', 'd']] });
 
     // 10 jours
     var last = Math.min(di + 10, dl.time.length), gmin = 100, gmax = -100, ds = '';
