@@ -72,12 +72,20 @@ a.tab{text-decoration:none;display:inline-block}
 
 /* graphiques */
 .charts{display:grid;grid-template-columns:repeat(4,1fr);grid-gap:.7rem}
-.ch{padding:.5rem .8rem .3rem;display:flex;flex-direction:column;min-width:0}
-.ct{display:flex;justify-content:space-between;font-size:1rem}
-.ct b{font-weight:600}.ct span{color:rgba(243,248,250,.7)}
+.ch{padding:.4rem .8rem .3rem;display:flex;flex-direction:column;min-width:0}
+.ct{display:flex;justify-content:space-between;align-items:baseline;font-size:1rem}
+.ct b{font-weight:600}.ct span{font-size:1.15rem;font-weight:600}.ct small{font-size:.8rem;font-weight:400;color:rgba(243,248,250,.7)}
+.lg{font-size:.8rem;color:rgba(243,248,250,.85);white-space:nowrap;overflow:hidden;margin:.1rem 0 .2rem}
+.lg i{display:inline-block;width:1.2rem;border-top:.18rem solid;vertical-align:middle;margin:0 .3rem 0 .7rem}
+.lg i:first-child{margin-left:0}.lg i.d{border-top-style:dashed}.lg i.b{width:.55rem;height:.7rem;border:0}
+.lg .tn{margin-left:.9rem;color:rgba(243,248,250,.7)}
 .cb{position:relative;flex:1;min-height:0;margin-bottom:1.1rem}
-.cb svg{position:absolute;left:0;top:0;width:100%;height:100%}
-.cb em{position:absolute;bottom:-1.15rem;font-style:normal;font-size:.8rem;color:rgba(243,248,250,.6);transform:translateX(-50%)}
+.pl{position:absolute;left:2.6rem;right:0;top:0;bottom:0}
+.pl svg{position:absolute;left:0;top:0;width:100%;height:100%}
+.pl em{position:absolute;bottom:-1.15rem;font-style:normal;font-size:.8rem;color:rgba(243,248,250,.6);transform:translateX(-50%)}
+.yl{position:absolute;left:0;width:2.3rem;text-align:right;font-size:.75rem;color:rgba(243,248,250,.6);transform:translateY(-50%)}
+.mk{position:absolute;width:.55rem;height:.55rem;border-radius:50%;border:.12rem solid #fff;transform:translate(-50%,-50%)}
+.ml{position:absolute;font-size:.8rem;font-weight:600;white-space:nowrap}
 
 /* 10 jours */
 .days{display:grid;grid-template-columns:repeat(10,1fr);grid-gap:.5rem}
@@ -187,24 +195,33 @@ a.tab{text-decoration:none;display:inline-block}
   });
 
   /* ---------- graphique SVG ---------- */
-  function chart(title, unit, times, series, bars) {
-    var N = times.length, W = 480, H = 100, all = [], i, k, s = '', lab = '';
+  function chart(title, times, series, o) {
+    var N = times.length, W = 480, H = 100, all = [], k, i, s = '', lab = '', ov = '', lg = '';
     for (k = 0; k < series.length; k++) { all = all.concat(series[k].v); }
     var mn = Math.min.apply(null, all), mx = Math.max.apply(null, all);
+    if (o.fixed) { mn = o.fixed[0]; mx = o.fixed[1]; }
     if (mx - mn < 1) { mx = mn + 1; }
     function X(i) { return i / (N - 1) * W; }
-    function Y(v) { return H - ((v - mn) / (mx - mn)) * H * 0.78 - H * 0.1; }
-    if (bars) {
-      var bm = Math.max(2, Math.max.apply(null, bars.v)), bw = W / N * 0.7;
+    function Y(v) { return H - ((v - mn) / (mx - mn)) * H * 0.70 - H * 0.14; }
+    function fy(v) { return (mx - mn) < 10 ? f1(v) : String(r(v)); }
+    function fm(v) { return r(v) + o.unit; }
+    var grid = [mx, (mx + mn) / 2, mn];
+    for (k = 0; k < 3; k++) {
+      s += '<line x1="0" x2="' + W + '" y1="' + Y(grid[k]) + '" y2="' + Y(grid[k]) + '" stroke="rgba(255,255,255,.13)" vector-effect="non-scaling-stroke"/>';
+      ov += '<div class="yl" style="top:' + Y(grid[k]) + '%">' + fy(grid[k]) + '</div>';
+    }
+    if (o.bars) {
+      var bm = Math.max(2, Math.max.apply(null, o.bars.v)), bw = W / N * 0.7;
       for (i = 0; i < N; i++) {
-        var bh = bars.v[i] / bm * H * 0.45;
-        s += '<rect x="' + (X(i) - bw / 2) + '" y="' + (H - bh) + '" width="' + bw + '" height="' + bh + '" fill="' + bars.c + '" opacity=".55"/>';
+        var bh = o.bars.v[i] / bm * H * 0.4;
+        s += '<rect x="' + (X(i) - bw / 2) + '" y="' + (H - bh) + '" width="' + bw + '" height="' + bh + '" fill="' + o.bars.c + '" opacity=".6"/>';
       }
     }
     for (i = 0; i < N; i++) {
       var hr = +times[i].substr(11, 2);
       if (hr === 0) { s += '<line x1="' + X(i) + '" x2="' + X(i) + '" y1="0" y2="' + H + '" stroke="rgba(255,255,255,.3)" stroke-dasharray="3" vector-effect="non-scaling-stroke"/>'; }
-      if (hr % 6 === 0) { lab += '<em style="left:' + (X(i) / W * 100) + '%">' + (hr === 0 ? DS[dow(times[i])] : hr + 'h') + '</em>'; }
+      if (i === 0) { lab += '<em style="left:0;transform:none">maint.</em>'; }
+      else if (hr % 6 === 0 && i >= 3) { lab += '<em style="left:' + (X(i) / W * 100) + '%">' + (hr === 0 ? DS[dow(times[i])] : hr + 'h') + '</em>'; }
     }
     for (k = 0; k < series.length; k++) {
       var d = '';
@@ -212,9 +229,22 @@ a.tab{text-decoration:none;display:inline-block}
       s += '<path d="' + d + '" fill="none" stroke="' + series[k].c + '" stroke-width="2.4" stroke-linejoin="round"' +
         (series[k].dash ? ' stroke-dasharray="5 4"' : '') + ' vector-effect="non-scaling-stroke"/>';
     }
-    var main = series[0].v;
-    return '<div class="ch card"><div class="ct"><b>' + title + '</b><span>' + r(Math.min.apply(null, main)) + ' à ' + r(Math.max.apply(null, main)) + ' ' + unit + '</span></div>' +
-      '<div class="cb"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + s + '</svg>' + lab + '</div></div>';
+    var m = series[0].v, imx = 0, imn = 0, mk = '';
+    for (i = 1; i < N; i++) { if (m[i] > m[imx]) { imx = i; } if (m[i] < m[imn]) { imn = i; } }
+    function mark(i, up) {
+      var x = Math.min(Math.max(X(i) / W * 100, 6), 94), y = Y(m[i]);
+      return '<div class="mk" style="left:' + (X(i) / W * 100) + '%;top:' + y + '%;background:' + series[0].c + '"></div>' +
+        '<div class="ml" style="left:' + x + '%;top:' + y + '%;color:' + series[0].c + ';transform:translate(-50%,' + (up ? '-155%' : '65%') + ')">' + fm(m[i]) + '</div>';
+    }
+    if (imx !== imn) { mk = mark(imx, true) + mark(imn, false); }
+    for (k = 0; k < o.legend.length; k++) {
+      var L = o.legend[k];
+      lg += (L[2] === 'n') ? '<span class="tn">' + L[0] + '</span>' :
+        '<i class="' + L[2] + '" style="border-color:' + L[1] + ';background:' + (L[2] === 'b' ? L[1] : 'transparent') + '"></i>' + L[0];
+    }
+    return '<div class="ch card"><div class="ct"><b>' + title + '</b><span style="color:' + series[0].c + '">' + o.now +
+      ' <small>▲ ' + fm(m[imx]) + ' &nbsp;▼ ' + fm(m[imn]) + '</small></span></div><div class="lg">' + lg + '</div>' +
+      '<div class="cb">' + ov + '<div class="pl"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' + s + '</svg>' + mk + lab + '</div></div></div>';
   }
 
   var AQ_NAMES = ['Bon', 'Correct', 'Modéré', 'Mauvais', 'Très mauvais', 'Extrême'];
@@ -306,12 +336,19 @@ a.tab{text-decoration:none;display:inline-block}
 
     // graphiques sur 48 h
     function sl(a) { return a.slice(idx, idx + 48); }
-    var T = sl(h.time);
+    var T = sl(h.time), rain48 = 0, p48 = sl(h.pressure_msl);
+    for (i = 0; i < T.length; i++) { rain48 += sl(h.precipitation)[i] || 0; }
+    var pd = p48[p48.length - 1] - p48[0];
     $('charts').innerHTML =
-      chart('Température et pluie', '°C', T, [{ v: sl(h.temperature_2m), c: '#ffd27a' }, { v: sl(h.apparent_temperature), c: '#a6e0ee', dash: 1 }], { v: sl(h.precipitation), c: '#8fd0ff' }) +
-      chart('Vent et rafales', 'km/h', T, [{ v: sl(h.wind_speed_10m), c: '#ffffff' }, { v: sl(h.wind_gusts_10m), c: '#ffb27a', dash: 1 }]) +
-      chart('Pression', 'hPa', T, [{ v: sl(h.pressure_msl), c: '#c9b6ff' }]) +
-      chart('Humidité et nuages', '%', T, [{ v: sl(h.relative_humidity_2m), c: '#8fe3c0' }, { v: sl(h.cloud_cover), c: '#cfd8dc', dash: 1 }]);
+      chart('Température et pluie', T, [{ v: sl(h.temperature_2m), c: '#ffd27a' }, { v: sl(h.apparent_temperature), c: '#a6e0ee', dash: 1 }],
+        { unit: '°', now: r(c.temperature_2m) + '°', bars: { v: sl(h.precipitation), c: '#8fd0ff' },
+          legend: [['Température °C', '#ffd27a', 's'], ['Ressenti', '#a6e0ee', 'd'], [rain48 > 0 ? 'Pluie : ' + f1(rain48) + ' mm sur 48 h' : 'Pas de pluie prévue', '#8fd0ff', 'b']] }) +
+      chart('Vent et rafales', T, [{ v: sl(h.wind_speed_10m), c: '#ffffff' }, { v: sl(h.wind_gusts_10m), c: '#ffb27a', dash: 1 }],
+        { unit: ' km/h', now: r(c.wind_speed_10m) + ' km/h', legend: [['Vent moyen', '#ffffff', 's'], ['Rafales', '#ffb27a', 'd']] }) +
+      chart('Pression', T, [{ v: p48, c: '#c9b6ff' }],
+        { unit: ' hPa', now: r(c.pressure_msl) + ' hPa', legend: [['Pression (hPa)', '#c9b6ff', 's'], ['Tendance 48 h : ' + (pd > 1 ? '↗' : pd < -1 ? '↘' : '→') + ' ' + (pd > 0 ? '+' : '') + f1(pd) + ' hPa', '', 'n']] }) +
+      chart('Humidité et nuages', T, [{ v: sl(h.relative_humidity_2m), c: '#8fe3c0' }, { v: sl(h.cloud_cover), c: '#cfd8dc', dash: 1 }],
+        { unit: ' %', now: r(c.relative_humidity_2m) + ' %', fixed: [0, 100], legend: [['Humidité', '#8fe3c0', 's'], ['Couverture nuageuse', '#cfd8dc', 'd']] });
 
     // 10 jours
     var last = Math.min(di + 10, dl.time.length), gmin = 100, gmax = -100, ds = '';
